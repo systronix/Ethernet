@@ -40,6 +40,9 @@ public:
 	static IPAddress gatewayIP();
 	static IPAddress dnsServerIP() { return _dnsServerAddress; }
 
+	// bboyes 20170714
+	static void getSocketStatus(void);
+
 	friend class EthernetClient;
 	friend class EthernetServer;
 	friend class EthernetUDP;

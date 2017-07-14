@@ -69,12 +69,13 @@ uint8_t EthernetClass::socketBegin(uint8_t protocol, uint16_t port)
 	}
 #endif
 	SPI.endTransaction();
+	Serial.printf("All %u Sockets in use\r\n", MAX_SOCK_NUM);
 	return MAX_SOCK_NUM; // all sockets are in use
 closemakesocket:
-	//Serial.printf("W5000socket close\n");
+	Serial.printf("W5000socket close\n");
 	W5100.execCmdSn(s, Sock_CLOSE);
 makesocket:
-	//Serial.printf("W5000socket %d\n", s);
+	Serial.printf("W5000socket %d\n", s);
 	EthernetServer::server_port[s] = 0;
 	delayMicroseconds(250); // TODO: is this needed??
 	W5100.writeSnMR(s, protocol);
@@ -91,7 +92,7 @@ makesocket:
 	state[s].RX_RD  = W5100.readSnRX_RD(s); // always zero?
 	state[s].RX_inc = 0;
 	state[s].TX_FSR = 0;
-	//Serial.printf("W5000socket prot=%d, RX_RD=%d\n", W5100.readSnMR(s), state[s].RX_RD);
+	Serial.printf("W5000socket prot=%d, RX_RD=%d\n", W5100.readSnMR(s), state[s].RX_RD);
 	SPI.endTransaction();
 	return s;
 }
@@ -486,3 +487,38 @@ int EthernetClass::socketSendUDP(uint8_t s)
 	return 1;
 }
 
+
+
+static const char *SnMr[] = {"Close", "TCP", "UDP", "IPRAW", "MACRAW"};
+    char socStatus[7];
+
+/**
+	From drmartin 
+	@link https://forum.pjrc.com/threads/43572-Optimization-Fast-Faster-Fastest-with-without-LTO?p=148431#post148431
+	<a href="https://forum.pjrc.com/threads/43572-Optimization-Fast-Faster-Fastest-with-without-LTO?p=148431#post148431">PJRC Forum sockets discussion</a>
+
+	Print out status of all 8 sockets in WIZ850io. Only 4 are currently supported in Arduino Ethernet, but 8 are there.
+*/
+void EthernetClass::getSocketStatus(void)
+{
+  for (uint8_t i = 0; i < 8; i++) 
+  {
+    switch (socketStatus(i)) 
+    {
+      case 0x00:
+        sprintf(socStatus, "Closed");
+        break;
+      case 0x14:
+        sprintf(socStatus,"Listen");
+        break;
+      case 0x17:
+       sprintf(socStatus, "Establ");
+        break;
+      default:
+        sprintf(socStatus, "0x%02x  ", socketStatus(i));
+        break;
+    }
+
+    Serial.printf("    Socket(%d) SnSr = %s SnMR = %s\r\n", i, socStatus, SnMr[W5100.readSnMR(i)]);
+  }
+}
