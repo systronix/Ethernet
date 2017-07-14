@@ -36,21 +36,21 @@ void EthernetClass::socketPortRand(uint16_t n)
 {
 	n &= 0x3FFF;
 	local_port ^= n;
-	//Serial.printf("socketPortRand %d, srcport=%d\n", n, local_port);
+	Serial.printf("socketPortRand %d, srcport=%d\n", n, local_port);
 }
 
 uint8_t EthernetClass::socketBegin(uint8_t protocol, uint16_t port)
 {
 	uint8_t s, status[MAX_SOCK_NUM];
 
-	//Serial.printf("W5000socket begin, protocol=%d, port=%d\n", protocol, port);
+	Serial.printf("W5000socket begin, protocol=%d, port=%d\n", protocol, port);
 	SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
 	// look at all the hardware sockets, use any that are closed (unused)
 	for (s=0; s < MAX_SOCK_NUM; s++) {
 		status[s] = W5100.readSnSR(s);
 		if (status[s] == SnSR::CLOSED) goto makesocket;
 	}
-	//Serial.printf("W5000socket step2\n");
+	Serial.printf("W5000socket step2\n");
 	// as a last resort, forcibly close any already closing
 	for (s=0; s < MAX_SOCK_NUM; s++) {
 		uint8_t stat = status[s];
@@ -59,7 +59,7 @@ uint8_t EthernetClass::socketBegin(uint8_t protocol, uint16_t port)
 		if (stat == SnSR::FIN_WAIT) goto closemakesocket;
 		if (stat == SnSR::CLOSING) goto closemakesocket;
 	}
-#if 0
+#if 1
 	Serial.printf("W5000socket step3\n");
 	// next, use any that are effectively closed
 	for (s=0; s < MAX_SOCK_NUM; s++) {
