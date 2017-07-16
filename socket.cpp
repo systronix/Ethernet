@@ -498,10 +498,11 @@ static const char *SnMr[] = {"Close", "TCP", "UDP", "IPRAW", "MACRAW"};
 	<a href="https://forum.pjrc.com/threads/43572-Optimization-Fast-Faster-Fastest-with-without-LTO?p=148431#post148431">PJRC Forum sockets discussion</a>
 
 	Print out status of all 8 sockets in WIZ850io. Only 4 are currently supported in Arduino Ethernet, but 8 are there.
+	@param num - how many sockets to report, [0] thru [n-1], n is a max of 8. Only 4 supported in Arduino.
 */
-void EthernetClass::getSocketStatus(void)
+void EthernetClass::getSocketStatus(uint8_t num)
 {
-  for (uint8_t i = 0; i < 8; i++) 
+  for (uint8_t i = 0; i < num; i++) 
   {
     switch (socketStatus(i)) 
     {
@@ -522,3 +523,16 @@ void EthernetClass::getSocketStatus(void)
     Serial.printf("    Socket(%d) SnSr = %s SnMR = %s\r\n", i, socStatus, SnMr[W5100.readSnMR(i)]);
   }
 }
+
+/**
+	Print one socket status
+
+	@param num - the socket number [0..7], only 0..3 supported in Arduino. If > 7, it's set to 7
+
+*/
+void EthernetClass::getSocketStatusX(uint8_t num)
+{
+	if (num > 7) num = 7;
+	Serial.printf("    Socket(%d) SnSr = %s SnMR = %s\r\n", num, socStatus, SnMr[W5100.readSnMR(num)]);
+}
+

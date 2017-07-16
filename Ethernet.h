@@ -41,7 +41,10 @@ public:
 	static IPAddress dnsServerIP() { return _dnsServerAddress; }
 
 	// bboyes 20170714
-	static void getSocketStatus(void);
+	static void getSocketStatus(uint8_t);		// print one or more socket status starting with [0]
+
+	// bboyes 20170716
+	static void getSocketStatusX(uint8_t);		// print any one socket status
 
 	friend class EthernetClient;
 	friend class EthernetServer;
