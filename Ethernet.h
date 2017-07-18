@@ -41,6 +41,8 @@ public:
 	static IPAddress dnsServerIP() { return _dnsServerAddress; }
 
 	// bboyes 20170714
+	// TODO change name to printSocketStatus
+	// TODO add function to return status as a value
 	static void getSocketStatus(uint8_t);		// print one or more socket status starting with [0]
 
 	// bboyes 20170716

@@ -490,7 +490,7 @@ int EthernetClass::socketSendUDP(uint8_t s)
 
 
 static const char *SnMr[] = {"Close", "TCP", "UDP", "IPRAW", "MACRAW"};
-    char socStatus[7];
+char socStatus[8];			// 7 char plus null terminator
 
 /**
 	From drmartin 
@@ -515,8 +515,14 @@ void EthernetClass::getSocketStatus(uint8_t num)
       case 0x17:
        sprintf(socStatus, "Establ");
         break;
+      case 0x1C:
+      	sprintf(socStatus, "ClsWait");
+      	break;
+      case 0x22:
+      	sprintf(socStatus, "Open");		// open in UDP mode
+      	break;
       default:
-        sprintf(socStatus, "0x%02x  ", socketStatus(i));
+        sprintf(socStatus, "0x%02X  ", socketStatus(i));
         break;
     }
 
