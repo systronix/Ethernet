@@ -31,7 +31,12 @@ static void read_data(uint8_t s, uint16_t src, uint8_t *dst, uint16_t len);
 /*          Socket management            */
 /*****************************************/
 
-
+/**
+	??? When and who calls this?
+	@param n what is this? What is the possible range?
+	Anded with 0x3FFF (16383 decimal). To what purpose?
+	Then it is bitwise x-ored with local_port. To what purpose?
+*/
 void EthernetClass::socketPortRand(uint16_t n)
 {
 	n &= 0x3FFF;
@@ -39,18 +44,28 @@ void EthernetClass::socketPortRand(uint16_t n)
 	Serial.printf("socketPortRand %d, srcport=%d\n", n, local_port);
 }
 
+/**
+	ref: W5500 DS 1.0.7 p45
+
+	@param protocol 0=closed, 1=TCP, 2=UDP, 4=MACRAW (Socket 0 only)
+*/
 uint8_t EthernetClass::socketBegin(uint8_t protocol, uint16_t port)
 {
-	uint8_t s, status[MAX_SOCK_NUM];
+	uint8_t s, status[MAX_SOCK_NUM];	// note 's' has scope of this entire function
 
-	Serial.printf("W5000socket begin, protocol=%d, port=%d\n", protocol, port);
+	Serial.printf("W5000socket begin, protocol=%d, port=%d\r\n", protocol, port);
 	SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
 	// look at all the hardware sockets, use any that are closed (unused)
+	// here s++ only executes at completion of for, which doesn't happen if goto executes
 	for (s=0; s < MAX_SOCK_NUM; s++) {
 		status[s] = W5100.readSnSR(s);
-		if (status[s] == SnSR::CLOSED) goto makesocket;
+		if (status[s] == SnSR::CLOSED) 
+			{
+				Serial.printf("    found closed socket %u\r\n", s);
+				goto makesocket;
+			}
 	}
-	Serial.printf("W5000socket step2\n");
+	Serial.printf("        W5000socket step2\n");
 	// as a last resort, forcibly close any already closing
 	for (s=0; s < MAX_SOCK_NUM; s++) {
 		uint8_t stat = status[s];
@@ -60,7 +75,7 @@ uint8_t EthernetClass::socketBegin(uint8_t protocol, uint16_t port)
 		if (stat == SnSR::CLOSING) goto closemakesocket;
 	}
 #if 1
-	Serial.printf("W5000socket step3\n");
+	Serial.printf("            W5000socket step3\n");
 	// next, use any that are effectively closed
 	for (s=0; s < MAX_SOCK_NUM; s++) {
 		uint8_t stat = status[s];
@@ -69,13 +84,13 @@ uint8_t EthernetClass::socketBegin(uint8_t protocol, uint16_t port)
 	}
 #endif
 	SPI.endTransaction();
-	Serial.printf("All %u Sockets in use\r\n", MAX_SOCK_NUM);
+	Serial.printf("    All %u Sockets in use\n", MAX_SOCK_NUM);
 	return MAX_SOCK_NUM; // all sockets are in use
 closemakesocket:
-	Serial.printf("W5000socket close\n");
+	Serial.printf("    W5000socket force close %u\n", s);
 	W5100.execCmdSn(s, Sock_CLOSE);
 makesocket:
-	Serial.printf("W5000socket %d\n", s);
+	Serial.printf("    W5000 makesocket %u\n", s);
 	EthernetServer::server_port[s] = 0;
 	delayMicroseconds(250); // TODO: is this needed??
 	W5100.writeSnMR(s, protocol);
@@ -84,7 +99,7 @@ makesocket:
 		W5100.writeSnPORT(s, port);
 	} else {
 		// if don't set the source port, set local_port number.
-		if (++local_port < 49152) local_port = 49152;
+		if (++local_port < 49152) local_port = 49152;			// bboyes why port 49152 (ephemeral range), and why hardcoded?
 		W5100.writeSnPORT(s, local_port);
 	}
 	W5100.execCmdSn(s, Sock_OPEN);
@@ -92,7 +107,7 @@ makesocket:
 	state[s].RX_RD  = W5100.readSnRX_RD(s); // always zero?
 	state[s].RX_inc = 0;
 	state[s].TX_FSR = 0;
-	Serial.printf("W5000socket prot=%d, RX_RD=%d\n", W5100.readSnMR(s), state[s].RX_RD);
+	Serial.printf("    W5000socket prot=%d, RX_RD=%d\n", W5100.readSnMR(s), state[s].RX_RD);
 	SPI.endTransaction();
 	return s;
 }
@@ -527,7 +542,7 @@ void EthernetClass::getSocketStatus(uint8_t num)
     }
 
     Serial.printf("    Socket(%d) SnSr = %s SnMR = %s\r\n", i, socStatus, SnMr[W5100.readSnMR(i)]);
-  }
+  } // end of for loop
 }
 
 /**
